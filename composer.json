@@ -1,0 +1,9 @@
+{
+    "require": {
+        "symfony/dom-crawler": "^4.2",
+        "symfony/css-selector": "^4.2",
+        "symfony/sendgrid-mailer": "^5.0",
+        "priyolahiri/sendgrid-php": "^1.0",
+        "swiftmailer/swiftmailer": "^6.2"
+    }
+}

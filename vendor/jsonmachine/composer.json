@@ -1,0 +1,12 @@
+{
+    "name": "germain/jsonmachine",
+    "authors": [
+        {
+            "name": "Germain LECOURTOIS",
+            "email": "gl@monsieursloop.com"
+        }
+    ],
+    "require": {
+        "halaxa/json-machine": "^0.3.2"
+    }
+}

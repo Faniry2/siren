@@ -1,0 +1,60 @@
+
+#svg {
+    display: block;
+    margin: auto;
+    height: 700px;
+}
+
+#chart {
+    margin-top: 20px;
+    border: 1px solid #DEDEDE;
+}
+
+.bar {
+    fill: steelblue;
+}
+
+.bar:hover {
+    fill: #23415A;
+}
+
+.tooltip {
+    position: absolute;
+    opacity:0.8;
+    z-index:1000;
+    text-align:left;
+    border-radius:4px;
+    -moz-border-radius:4px;
+    -webkit-border-radius:4px;
+    padding:8px;
+    color:#fff;
+    background-color:#000;
+    font: 12px sans-serif;
+    max-width: 300px;
+}
+
+#statDay {
+    background: #f7f7f9 none repeat scroll 0 0;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 40px;
+    margin-top: 0;
+    padding-top: 40px;
+    text-align: center;
+    color: grey;
+    font-weight: 300;
+    --font-family-sans-serif: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+    --font-family-monospace: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+
+}
+#statDay h1 {
+    font-size: 3em;
+    font-weight: 300;
+    --font-family-sans-serif: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+    --font-family-monospace: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+}
+#statDay h3 {
+    color: grey;
+    font-weight: 300;
+    --font-family-sans-serif: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+    --font-family-monospace: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+}
