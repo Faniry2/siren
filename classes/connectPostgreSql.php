@@ -19,6 +19,11 @@ class connectPostreSql {
     public static $oConnexion;
     public static $oConnexionProd;
     private $iCountChgAdresse = 0;
+    private $geosirene= "poi.geosirene";
+
+    public function __constructor(){
+        
+    }
 
     function getConnexion() {
 
@@ -340,6 +345,9 @@ class connectPostreSql {
         Util::logMajGeosirene("Fin update geosirene donnees BANO");
     }
 
+    /**
+     * geocode les adresses avec l'api bano
+     */
     public function updateGeosireneBanoFromApi($oResult, $siret, $numfic) {
 
         //echo '----------------------------------------------------------updateGeosireneBano \n';
@@ -384,6 +392,7 @@ class connectPostreSql {
                 result_city=:result_city, 
                 result_context=:result_context, 
                 result_citycode=:result_citycode
+                depcom=:depcom
                 WHERE num_fic=:num_fic AND 
                 siret =:siret;";
 
@@ -405,6 +414,7 @@ class connectPostreSql {
         $sql->bindParam(':result_citycode', $sResultCityCode, PDO::PARAM_STR);
         $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
         $sql->bindParam(':siret', $siret, PDO::PARAM_STR);
+        $sql->bindParam(':depcom', $sResultCityCode, PDO::PARAM_STR);
 
         $sql->execute();
 //
@@ -416,6 +426,284 @@ class connectPostreSql {
         }
 
         // Util::logMajGeosirene("Fin update geosirene donnees BANO");
+    }
+
+    /**
+     * @author faniry 
+     * met le bon depcom
+     */
+    public function updateGeosireneByAddDepcom(){
+        $sqlQuery="UPDATE $geosirene as g set comirisable = dico.comirisable
+                   FROM corresp.dico_commune_lastref as dico WHERE g.depcom = dico.depcom" ;
+        $db=$this->getConnexion();
+        $sql=$db->prepare($sqlQuery);
+        $sql->execute();
+
+        $aErreur = $sql->errorInfo();
+        if (strlen($aErreur[2]) > 0) {
+            echo $sqlQuery . "\n\n";
+            $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
+            //die($aErreur[2]);
+        }
+
+    }
+
+    /**
+     * @author faniry
+     * Remplissage de "geocentrecom" si le geocodage était fait au niveau de commune ou quartier
+     */
+    public function geocentrecom(){
+        $sqlQuery="UPDATE $this->geosirene SET geocentrecom =:geocentrecom
+                   WHERE result_type IN (:locality,:municipality)";
+        $db=$this->getConnexion();
+        $sql=$db->prepare($sqlQuery);
+        $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
+        $sql->bindParam(':locality','locality',PDO::PARAM_STR);
+        $sql->bindParam(':municipality','municipality',PDO::PARAM_STR);
+
+        $sql->execute();
+
+        $aErreur = $sql->errorInfo();
+        if (strlen($aErreur[2]) > 0) {
+            echo $sqlQuery . "\n\n";
+            $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
+            //die($aErreur[2]);
+        }
+    } 
+
+    /**
+     * @author faniry
+     *  UPDATE longitude / latitude pour les POIs géocodés à la commune (result_type = 'locality' --> geocentrecom = true)
+     */
+    public function updateLatLngForPOIGeocodeAtCity(){
+        $sqlQuery="UPDATE $this->geosirene as g SET modifxy = :modifxy  
+                  WHERE g.geocentrecom= :geocentrecom ";
+        $db=$this->getConnexion();
+        $sql=$db->prepare($sqlQuery);
+        $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
+        $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
+        $sql->execute();
+
+        $aErreur = $sql->errorInfo();
+        if (strlen($aErreur[2]) > 0) {
+            echo $sqlQuery . "\n\n";
+            $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
+            //die($aErreur[2]);
+        }
+    }
+
+    /**
+     * @author faniry
+     * Attribution du DCOMIRIS COMPLET
+     */
+    public function setDcomIris(){
+        $sqlQuery="UPDATE $this->geosirene as gm set dcomiris= iris.dcomiris 
+                   FROM geo.iris_geo as iris 
+                   WHERE 
+                    (gm.geocentrecom =:geocentrecom1  OR (gm.geocentrecom =:geocentrecom2 AND gm.comirisables =:comirisables))
+                    AND
+                    (ST_intersects(ST_Transform(ST_SetSRID(ST_MakePoint(gm.longitude,gm.latitude),4326),3857),iris.the_geom_3857))";
+         $db=$this->getConnexion();
+         $sql=$db->prepare($sqlQuery);
+         $sql->bindParam(':geocentrecom1', false,PDO::PARAM_BOOL);
+         $sql->bindParam(':geocentrecom2', true,PDO::PARAM_BOOL);
+         $sql->bindParam(':comirisables', false,PDO::PARAM_BOOL);
+         $sql->execute();
+ 
+         $aErreur = $sql->errorInfo();
+         if (strlen($aErreur[2]) > 0) {
+             echo $sqlQuery . "\n\n";
+             $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
+             //die($aErreur[2]);
+         }
+    }
+
+    /**
+     * @author faniry
+     * Attribution du DCOMIRIS XXXX and dcomiris not null
+     */
+    public function setDcomIrisToXXXX(){
+        $sqlQuery="UPDATE $this->geosirene SET dcomiris = depcom || :xxxx, result_type= :result_type, geocentrecom = :geocentrecom, modifxy = :modifxy 
+                WHERE dcomiris IS NOT NULL AND SUBSTR(dcomiris, 1, 5) <>depcom AND comirisables= :comirisables";
+         $db=$this->getConnexion();
+         $sql=$db->prepare($sqlQuery);
+         $sql->bindParam(':xxxx','xxxx',PDO::PARAM_STR);
+         $sql->bindParam(':result_type','municipality',PDO::PARAM_STR);
+         $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
+         $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
+         $sql->bindParam(':comirisables', true,PDO::PARAM_BOOL);
+ 
+         $sql->execute();
+ 
+         $aErreur = $sql->errorInfo();
+         if (strlen($aErreur[2]) > 0) {
+             echo $sqlQuery . "\n\n";
+             $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
+             //die($aErreur[2]);
+         }
+    }
+
+    /**
+     * @author faniry
+     * Attribution du DCOMIRIS 0000 and dcomiris not null
+     */
+    public function setDcomIrisTo0000(){
+        $sqlQuery="UPDATE $this->geosirene SET dcomiris = depcom || :xxxx, result_type= :result_type, geocentrecom = :geocentrecom, modifxy = :modifxy 
+                WHERE dcomiris IS NOT NULL AND SUBSTR(dcomiris, 1, 5) <>depcom AND comirisables= :comirisables";
+         $db=$this->getConnexion();
+         $sql=$db->prepare($sqlQuery);
+         $sql->bindParam(':xxxx','0000',PDO::PARAM_STR);
+         $sql->bindParam(':result_type','municipality',PDO::PARAM_STR);
+         $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
+         $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
+         $sql->bindParam(':comirisables', false,PDO::PARAM_BOOL);
+ 
+         $sql->execute();
+ 
+         $aErreur = $sql->errorInfo();
+         if (strlen($aErreur[2]) > 0) {
+             echo $sqlQuery . "\n\n";
+             $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
+             //die($aErreur[2]);
+         }
+    }
+    /**
+     * @author faniry
+     * Attribution du DCOMIRIS XXXX and dcomiris == null
+     */
+    public function setDcomIrisToXXXXWhenDcomirisIsNull(){
+        $sqlQuery="UPDATE $this->geosirene SET dcomiris = depcom || :xxxx, result_type= :result_type, geocentrecom = :geocentrecom, modifxy = :modifxy 
+                WHERE dcomiris IS NULL AND comirisables= :comirisables AND  latitude IS NOT NULL AND longitude IS NOT NULL ";
+         $db=$this->getConnexion();
+         $sql=$db->prepare($sqlQuery);
+         $sql->bindParam(':xxxx','xxxx',PDO::PARAM_STR);
+         $sql->bindParam(':result_type','municipality',PDO::PARAM_STR);
+         $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
+         $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
+         $sql->bindParam(':comirisables', true,PDO::PARAM_BOOL);
+ 
+         $sql->execute();
+ 
+         $aErreur = $sql->errorInfo();
+         if (strlen($aErreur[2]) > 0) {
+             echo $sqlQuery . "\n\n";
+             $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
+             //die($aErreur[2]);
+         }
+    }
+
+    /**
+     * @author faniry
+     * Attribution du DCOMIRIS 0000 and dcomiris  null
+     */
+    public function setDcomIrisTo0000WhenDcomirisIsNull(){
+        $sqlQuery="UPDATE $this->geosirene SET dcomiris = depcom || :xxxx, result_type= :result_type, geocentrecom = :geocentrecom, modifxy = :modifxy 
+                WHERE dcomiris IS NULL AND comirisables= :comirisables AND  latitude IS NOT NULL AND longitude IS NOT NULL ";
+         $db=$this->getConnexion();
+         $sql=$db->prepare($sqlQuery);
+         $sql->bindParam(':xxxx','0000',PDO::PARAM_STR);
+         $sql->bindParam(':result_type','municipality',PDO::PARAM_STR);
+         $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
+         $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
+         $sql->bindParam(':comirisables', false,PDO::PARAM_BOOL);
+ 
+         $sql->execute();
+ 
+         $aErreur = $sql->errorInfo();
+         if (strlen($aErreur[2]) > 0) {
+             echo $sqlQuery . "\n\n";
+             $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
+             //die($aErreur[2]);
+         }
+    }
+
+    /**
+     * @author faniry
+     * Attribution du DCOMIRIS XXXX and result_type == null
+     */
+    public function setDcomIrisToXXXXWhenResultTypeIsNull(){
+        $sqlQuery="UPDATE $this->geosirene SET dcomiris = depcom || :xxxx, result_type= :result_type, geocentrecom = :geocentrecom, modifxy = :modifxy 
+                WHERE result_type IS NULL AND comirisables= :comirisables AND  latitude IS NOT NULL AND longitude IS NOT NULL ";
+         $db=$this->getConnexion();
+         $sql=$db->prepare($sqlQuery);
+         $sql->bindParam(':xxxx','xxxx',PDO::PARAM_STR);
+         $sql->bindParam(':result_type','municipality',PDO::PARAM_STR);
+         $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
+         $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
+         $sql->bindParam(':comirisables', true,PDO::PARAM_BOOL);
+ 
+         $sql->execute();
+ 
+         $aErreur = $sql->errorInfo();
+         if (strlen($aErreur[2]) > 0) {
+             echo $sqlQuery . "\n\n";
+             $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
+             //die($aErreur[2]);
+         }
+    }
+
+    /**
+     * @author faniry
+     * Attribution du DCOMIRIS 0000 and result_type == null
+     */
+    public function setDcomIrisTo0000WhenResultTypeIsNull(){
+        $sqlQuery="UPDATE $this->geosirene SET dcomiris = depcom || :xxxx, result_type= :result_type, geocentrecom = :geocentrecom, modifxy = :modifxy 
+                WHERE result_type IS NULL AND comirisables= :comirisables AND  latitude IS NOT NULL AND longitude IS NOT NULL ";
+         $db=$this->getConnexion();
+         $sql=$db->prepare($sqlQuery);
+         $sql->bindParam(':xxxx','0000',PDO::PARAM_STR);
+         $sql->bindParam(':result_type','municipality',PDO::PARAM_STR);
+         $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
+         $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
+         $sql->bindParam(':comirisables', false,PDO::PARAM_BOOL);
+ 
+         $sql->execute();
+ 
+         $aErreur = $sql->errorInfo();
+         if (strlen($aErreur[2]) > 0) {
+             echo $sqlQuery . "\n\n";
+             $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
+             //die($aErreur[2]);
+         }
+    }
+
+    /**
+     * @author faniry 
+     * Si modifxy = TRUE --> On met à jour les coordonnées XY avec le centroïde de la COMMUNE
+     */
+    public function updateLatLngWithCityCoordinates(){
+        $sqlQuery="UPDATE $this->geosirene as gm SET longitude= ST_X(ST_Centroid(ST_Transform(ST_SetSRID(commune_geo.the_geom_3857,3857),4326)))
+        , latitude=ST_Y(ST_Centroid(ST_Transform(ST_SetSRID(commune_geo.the_geom_3857,3857),4326))) 
+        FROM geo.commune_geo as geo WHERE modifxy = :modifxy AND gm.depcom = geo.depcom";
+        $db=$this->getConnexion();
+        $sql=$db->prepare($sqlQuery);
+        $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
+        $sql->execute();
+ 
+        $aErreur = $sql->errorInfo();
+        if (strlen($aErreur[2]) > 0) {
+            echo $sqlQuery . "\n\n";
+            $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
+            //die($aErreur[2]);
+        }
+    }
+
+    /**
+     * @author faniry 
+     *  Calcul de la géométrie en EPSG:3857 à partir des coordonnées (longitude/latitude en EPSG:4326)
+     */
+    public function calculateGeometrieTo3857EPSG(){
+        $sqlQuery="UPDATE $this->geosirene SET 
+        the_geom_3857 = ST_Transform(ST_SetSRID(ST_MakePoint(longitude,latitude),4326),3857) 
+        WHERE (longitude IS NOT NULL and latitude IS NOT NULL)";
+         $db=$this->getConnexion();
+         $sql=$db->prepare($sqlQuery);
+         $aErreur = $sql->errorInfo();
+         if (strlen($aErreur[2]) > 0) {
+             echo $sqlQuery . "\n\n";
+             $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
+             //die($aErreur[2]);
+         }
     }
 
     public function updateGeosireneBanoFromApiSansNumFic($oResult, $siret) {
