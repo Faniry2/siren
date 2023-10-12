@@ -237,7 +237,7 @@ while ($bDeuxJours) {
                     $oResult = $oApiBano->sendRequest($sAdresse);
 
                     $oConnectPG->updateGeosireneBanoFromApi($oResult, $aTmpStock[$i]['siret'], $numfic);
-
+                    $oConnectPG->geocodageIris($numfic);
 
 
                     //echo "----------------FIN-UPDATE BANO---------------------\n\n";

@@ -48,8 +48,9 @@
     </a>
     <br>
 
-<a href="indexBano.php" ><div style="color:#eeeeee;height: 100px;text-align: center;background-color: #122b40;">Accès à l'API Bano</div></a>
+        <a href="indexBano.php" ><div style="color:#eeeeee;height: 100px;text-align: center;background-color: #122b40;">Accès à l'API Bano</div></a>
     <br>
+     <a href="testGeocodageIris.php">Lancez le test geocodage IRIS</a>
     <!--<a href="outil.php" ><div style="color:#eeeeee; height: 100px;text-align: center;background-color: #66afe9;">Accès à outils</div></a>-->
 
 

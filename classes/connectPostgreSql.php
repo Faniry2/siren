@@ -429,14 +429,34 @@ class connectPostreSql {
     }
 
     /**
-     * @author faniry 
-     * met le bon depcom
+     * 
+     * @author
      */
-    public function updateGeosireneByAddDepcom(){
-        $sqlQuery="UPDATE $geosirene as g set comirisable = dico.comirisable
-                   FROM corresp.dico_commune_lastref as dico WHERE g.depcom = dico.depcom" ;
+    public function geocodageIris($numfic){
+        $this->updateGeosireneByAddDepcom($numfic);
+        $this->geocentrecom($numfic);
+        $this->updateLatLngForPOIGeocodeAtCity($numfic);
+        $this->setDcomIris($numfic);
+        $this->setDcomIrisToXXXX($numfic);
+        $this->setDcomIrisTo0000($numfic);
+        $this->setDcomIrisToXXXXWhenDcomirisIsNull($numfic);
+        $this->setDcomIrisTo0000WhenDcomirisIsNull($numfic);
+        $this->setDcomIrisToXXXXWhenResultTypeIsNull($numfic);
+        $this->setDcomIrisTo0000WhenResultTypeIsNull($numfic);
+        $this->updateLatLngWithCityCoordinates($numfic);
+        $this->calculateGeometrieTo3857EPSG($numfic);
+
+    }
+    /**
+     * @author faniry 
+     * Remplissage de "comirisables"
+     */
+    public function updateGeosireneByAddDepcom($numfic){
+        $sqlQuery="UPDATE $this->geosirene as g set comirisable = dico.comirisable
+                   FROM corresp.dico_commune_lastref as dico WHERE g.depcom = dico.depcom and num_fic= :num_fic" ;
         $db=$this->getConnexion();
         $sql=$db->prepare($sqlQuery);
+        $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
@@ -452,14 +472,15 @@ class connectPostreSql {
      * @author faniry
      * Remplissage de "geocentrecom" si le geocodage était fait au niveau de commune ou quartier
      */
-    public function geocentrecom(){
+    public function geocentrecom($numfic){
         $sqlQuery="UPDATE $this->geosirene SET geocentrecom =:geocentrecom
-                   WHERE result_type IN (:locality,:municipality)";
+                   WHERE result_type IN (:locality,:municipality) AND nim_fic=:num_fic";
         $db=$this->getConnexion();
         $sql=$db->prepare($sqlQuery);
         $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
         $sql->bindParam(':locality','locality',PDO::PARAM_STR);
         $sql->bindParam(':municipality','municipality',PDO::PARAM_STR);
+        $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
 
         $sql->execute();
 
@@ -475,13 +496,14 @@ class connectPostreSql {
      * @author faniry
      *  UPDATE longitude / latitude pour les POIs géocodés à la commune (result_type = 'locality' --> geocentrecom = true)
      */
-    public function updateLatLngForPOIGeocodeAtCity(){
-        $sqlQuery="UPDATE $this->geosirene as g SET modifxy = :modifxy  
-                  WHERE g.geocentrecom= :geocentrecom ";
+    public function updateLatLngForPOIGeocodeAtCity($numfic){
+        $sqlQuery="UPDATE $this->geosirene SET modifxy = :modifxy  
+                  WHERE geocentrecom= :geocentrecom AND num_fic =:num_fic";
         $db=$this->getConnexion();
         $sql=$db->prepare($sqlQuery);
         $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
         $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
+        $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
@@ -496,18 +518,21 @@ class connectPostreSql {
      * @author faniry
      * Attribution du DCOMIRIS COMPLET
      */
-    public function setDcomIris(){
+    public function setDcomIris($numfic){
         $sqlQuery="UPDATE $this->geosirene as gm set dcomiris= iris.dcomiris 
                    FROM geo.iris_geo as iris 
                    WHERE 
                     (gm.geocentrecom =:geocentrecom1  OR (gm.geocentrecom =:geocentrecom2 AND gm.comirisables =:comirisables))
                     AND
-                    (ST_intersects(ST_Transform(ST_SetSRID(ST_MakePoint(gm.longitude,gm.latitude),4326),3857),iris.the_geom_3857))";
+                    (ST_intersects(ST_Transform(ST_SetSRID(ST_MakePoint(gm.longitude,gm.latitude),4326),3857),iris.the_geom_3857))
+                    AND
+                    (gm.num_fic =:num_fic)";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':geocentrecom1', false,PDO::PARAM_BOOL);
          $sql->bindParam(':geocentrecom2', true,PDO::PARAM_BOOL);
          $sql->bindParam(':comirisables', false,PDO::PARAM_BOOL);
+         $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
          $sql->execute();
  
          $aErreur = $sql->errorInfo();
@@ -522,9 +547,12 @@ class connectPostreSql {
      * @author faniry
      * Attribution du DCOMIRIS XXXX and dcomiris not null
      */
-    public function setDcomIrisToXXXX(){
+    public function setDcomIrisToXXXX($numfic){
         $sqlQuery="UPDATE $this->geosirene SET dcomiris = depcom || :xxxx, result_type= :result_type, geocentrecom = :geocentrecom, modifxy = :modifxy 
-                WHERE dcomiris IS NOT NULL AND SUBSTR(dcomiris, 1, 5) <>depcom AND comirisables= :comirisables";
+                WHERE dcomiris IS NOT NULL 
+                AND SUBSTR(dcomiris, 1, 5) <>depcom 
+                AND comirisables= :comirisables
+                AND num_fic =:num_fic";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':xxxx','xxxx',PDO::PARAM_STR);
@@ -532,7 +560,7 @@ class connectPostreSql {
          $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
          $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
          $sql->bindParam(':comirisables', true,PDO::PARAM_BOOL);
- 
+         $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
          $sql->execute();
  
          $aErreur = $sql->errorInfo();
@@ -547,9 +575,12 @@ class connectPostreSql {
      * @author faniry
      * Attribution du DCOMIRIS 0000 and dcomiris not null
      */
-    public function setDcomIrisTo0000(){
+    public function setDcomIrisTo0000($numfic){
         $sqlQuery="UPDATE $this->geosirene SET dcomiris = depcom || :xxxx, result_type= :result_type, geocentrecom = :geocentrecom, modifxy = :modifxy 
-                WHERE dcomiris IS NOT NULL AND SUBSTR(dcomiris, 1, 5) <>depcom AND comirisables= :comirisables";
+                WHERE dcomiris IS NOT NULL 
+                AND SUBSTR(dcomiris, 1, 5) <>depcom 
+                AND comirisables= :comirisables
+                AND num_fic =:num_fic";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':xxxx','0000',PDO::PARAM_STR);
@@ -557,6 +588,7 @@ class connectPostreSql {
          $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
          $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
          $sql->bindParam(':comirisables', false,PDO::PARAM_BOOL);
+         $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
  
          $sql->execute();
  
@@ -571,9 +603,13 @@ class connectPostreSql {
      * @author faniry
      * Attribution du DCOMIRIS XXXX and dcomiris == null
      */
-    public function setDcomIrisToXXXXWhenDcomirisIsNull(){
+    public function setDcomIrisToXXXXWhenDcomirisIsNull($numfic){
         $sqlQuery="UPDATE $this->geosirene SET dcomiris = depcom || :xxxx, result_type= :result_type, geocentrecom = :geocentrecom, modifxy = :modifxy 
-                WHERE dcomiris IS NULL AND comirisables= :comirisables AND  latitude IS NOT NULL AND longitude IS NOT NULL ";
+                WHERE dcomiris IS NULL 
+                AND comirisables= :comirisables 
+                AND  latitude IS NOT NULL 
+                AND longitude IS NOT NULL 
+                AND num_fic =:num_fic";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':xxxx','xxxx',PDO::PARAM_STR);
@@ -581,6 +617,7 @@ class connectPostreSql {
          $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
          $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
          $sql->bindParam(':comirisables', true,PDO::PARAM_BOOL);
+         $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
  
          $sql->execute();
  
@@ -596,9 +633,13 @@ class connectPostreSql {
      * @author faniry
      * Attribution du DCOMIRIS 0000 and dcomiris  null
      */
-    public function setDcomIrisTo0000WhenDcomirisIsNull(){
+    public function setDcomIrisTo0000WhenDcomirisIsNull($numfic){
         $sqlQuery="UPDATE $this->geosirene SET dcomiris = depcom || :xxxx, result_type= :result_type, geocentrecom = :geocentrecom, modifxy = :modifxy 
-                WHERE dcomiris IS NULL AND comirisables= :comirisables AND  latitude IS NOT NULL AND longitude IS NOT NULL ";
+                WHERE dcomiris IS NULL 
+                AND comirisables= :comirisables 
+                AND  latitude IS NOT NULL 
+                AND longitude IS NOT NULL 
+                AND num_fic =:num_fic";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':xxxx','0000',PDO::PARAM_STR);
@@ -606,7 +647,7 @@ class connectPostreSql {
          $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
          $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
          $sql->bindParam(':comirisables', false,PDO::PARAM_BOOL);
- 
+         $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
          $sql->execute();
  
          $aErreur = $sql->errorInfo();
@@ -621,9 +662,13 @@ class connectPostreSql {
      * @author faniry
      * Attribution du DCOMIRIS XXXX and result_type == null
      */
-    public function setDcomIrisToXXXXWhenResultTypeIsNull(){
+    public function setDcomIrisToXXXXWhenResultTypeIsNull($numfic){
         $sqlQuery="UPDATE $this->geosirene SET dcomiris = depcom || :xxxx, result_type= :result_type, geocentrecom = :geocentrecom, modifxy = :modifxy 
-                WHERE result_type IS NULL AND comirisables= :comirisables AND  latitude IS NOT NULL AND longitude IS NOT NULL ";
+                WHERE result_type IS NULL 
+                AND comirisables= :comirisables 
+                AND  latitude IS NOT NULL 
+                AND longitude IS NOT NULL 
+                AND num_fic =:num_fic";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':xxxx','xxxx',PDO::PARAM_STR);
@@ -631,7 +676,7 @@ class connectPostreSql {
          $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
          $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
          $sql->bindParam(':comirisables', true,PDO::PARAM_BOOL);
- 
+         $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
          $sql->execute();
  
          $aErreur = $sql->errorInfo();
@@ -646,9 +691,13 @@ class connectPostreSql {
      * @author faniry
      * Attribution du DCOMIRIS 0000 and result_type == null
      */
-    public function setDcomIrisTo0000WhenResultTypeIsNull(){
+    public function setDcomIrisTo0000WhenResultTypeIsNull($numfic){
         $sqlQuery="UPDATE $this->geosirene SET dcomiris = depcom || :xxxx, result_type= :result_type, geocentrecom = :geocentrecom, modifxy = :modifxy 
-                WHERE result_type IS NULL AND comirisables= :comirisables AND  latitude IS NOT NULL AND longitude IS NOT NULL ";
+                WHERE result_type IS NULL 
+                AND comirisables= :comirisables 
+                AND  latitude IS NOT NULL 
+                AND longitude IS NOT NULL 
+                AND num_fic = :num_fic";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':xxxx','0000',PDO::PARAM_STR);
@@ -656,7 +705,7 @@ class connectPostreSql {
          $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);
          $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
          $sql->bindParam(':comirisables', false,PDO::PARAM_BOOL);
- 
+         $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
          $sql->execute();
  
          $aErreur = $sql->errorInfo();
@@ -671,13 +720,17 @@ class connectPostreSql {
      * @author faniry 
      * Si modifxy = TRUE --> On met à jour les coordonnées XY avec le centroïde de la COMMUNE
      */
-    public function updateLatLngWithCityCoordinates(){
-        $sqlQuery="UPDATE $this->geosirene as gm SET longitude= ST_X(ST_Centroid(ST_Transform(ST_SetSRID(commune_geo.the_geom_3857,3857),4326)))
-        , latitude=ST_Y(ST_Centroid(ST_Transform(ST_SetSRID(commune_geo.the_geom_3857,3857),4326))) 
-        FROM geo.commune_geo as geo WHERE modifxy = :modifxy AND gm.depcom = geo.depcom";
+    public function updateLatLngWithCityCoordinates($numfic){
+        $sqlQuery="UPDATE $this->geosirene as gm SET longitude= ST_X(ST_Centroid(ST_Transform(ST_SetSRID(geo.the_geom_3857,3857),4326)))
+        , latitude=ST_Y(ST_Centroid(ST_Transform(ST_SetSRID(geo.the_geom_3857,3857),4326))) 
+        FROM geo.commune_geo as geo 
+        WHERE modifxy = :modifxy 
+        AND gm.depcom = geo.depcom
+        AND num_fic = :num_fic";
         $db=$this->getConnexion();
         $sql=$db->prepare($sqlQuery);
         $sql->bindParam(':modifxy', true,PDO::PARAM_BOOL);
+        $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
         $sql->execute();
  
         $aErreur = $sql->errorInfo();
@@ -692,12 +745,16 @@ class connectPostreSql {
      * @author faniry 
      *  Calcul de la géométrie en EPSG:3857 à partir des coordonnées (longitude/latitude en EPSG:4326)
      */
-    public function calculateGeometrieTo3857EPSG(){
+    public function calculateGeometrieTo3857EPSG($numfic){
         $sqlQuery="UPDATE $this->geosirene SET 
         the_geom_3857 = ST_Transform(ST_SetSRID(ST_MakePoint(longitude,latitude),4326),3857) 
-        WHERE (longitude IS NOT NULL and latitude IS NOT NULL)";
+        WHERE longitude IS NOT NULL 
+        AND latitude IS NOT NULL
+        AND num_fic = :num_fic";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
+         $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
+         $sql->execute();
          $aErreur = $sql->errorInfo();
          if (strlen($aErreur[2]) > 0) {
              echo $sqlQuery . "\n\n";
