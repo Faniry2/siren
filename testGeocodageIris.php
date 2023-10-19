@@ -1,4 +1,5 @@
 <?php
 require_once 'classes/connectPostgreSql.php';
 $oConnectPG = new connectPostreSql();
-$oConnectPG->geocodageIris();
+$numfic=2;
+$oConnectPG->geocodageIris($numfic);

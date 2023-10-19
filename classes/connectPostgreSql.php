@@ -391,7 +391,7 @@ class connectPostreSql {
                 result_postcode=:result_postcode, 
                 result_city=:result_city, 
                 result_context=:result_context, 
-                result_citycode=:result_citycode
+                result_citycode=:result_citycode,
                 depcom=:depcom
                 WHERE num_fic=:num_fic AND 
                 siret =:siret;";
@@ -452,7 +452,7 @@ class connectPostreSql {
      * Remplissage de "comirisables"
      */
     public function updateGeosireneByAddDepcom($numfic){
-        $sqlQuery="UPDATE $this->geosirene as g set comirisable = dico.comirisable
+        $sqlQuery="UPDATE $this->geosirene as g set comirisables = dico.comirisables
                    FROM corresp.dico_commune_lastref as dico WHERE g.depcom = dico.depcom and num_fic= :num_fic" ;
         $db=$this->getConnexion();
         $sql=$db->prepare($sqlQuery);
@@ -474,7 +474,7 @@ class connectPostreSql {
      */
     public function geocentrecom($numfic){
         $sqlQuery="UPDATE $this->geosirene SET geocentrecom =:geocentrecom
-                   WHERE result_type IN (:locality,:municipality) AND nim_fic=:num_fic";
+                   WHERE result_type IN (:locality,:municipality) AND num_fic=:num_fic";
         $db=$this->getConnexion();
         $sql=$db->prepare($sqlQuery);
         $sql->bindParam(':geocentrecom', true,PDO::PARAM_BOOL);

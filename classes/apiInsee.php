@@ -126,6 +126,7 @@ class apiInsee {
 
     public function revokeJetonInsee($jeton) {
 
+        
         $tab_jours = array(7, 1, 2, 3, 4, 5, 6);
 
         $inumJour = $tab_jours[date('w', mktime(0, 0, 0, date('m'), date('d'), date('Y')))];
