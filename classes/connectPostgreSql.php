@@ -104,7 +104,9 @@ class connectPostreSql {
         //print_r(self::$oConnexion->errorInfo());
         $resultset->execute();
         $aErreur = $resultset->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sQuery . "\n";
             die($aErreur[2]);
         }
@@ -117,7 +119,9 @@ class connectPostreSql {
 //        //print_r(self::$oConnexion->errorInfo());
 //        $resultset->execute();
 //        $aErreur = $resultset->errorInfo();
-//        if (strlen($aErreur[2]) > 0) {
+//        $error= $aErreur[2] ?? '';
+        
+       // if (strlen($error) > 0) {
 //            echo $sQuery . "\n";
 //            die($aErreur[2]);
 //        }
@@ -129,7 +133,10 @@ class connectPostreSql {
         $resultset = self::$oConnexion->prepare($sQuery);
         $resultset->execute();
         $aErreur = $resultset->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error = $aErreur[2] ?? "";
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sQuery . "\n";
             die($aErreur[2]);
         } else {
@@ -143,7 +150,9 @@ class connectPostreSql {
 //        $resultset = self::$oConnexionProd->prepare($sQuery);
 //        $resultset->execute();
 //        $aErreur = $resultset->errorInfo();
-//        if (strlen($aErreur[2]) > 0) {
+//        $error= $aErreur[2] ?? '';
+        
+        //if (strlen($error) > 0) {
 //            echo $sQuery . "\n";
 //            die($aErreur[2]);
 //        } else {
@@ -206,7 +215,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sql->queryString . "<br><br>";
             die($aErreur[2]);
         } else {
@@ -224,7 +235,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sql->queryString . "<br><br>";
             die($aErreur[2]);
         } else {
@@ -332,7 +345,9 @@ class connectPostreSql {
                         $sql->execute();
 
                         $aErreur = $sql->errorInfo();
-                        if (strlen($aErreur[2]) > 0) {
+                        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
                             echo $sql->queryString . "\n\n";
                             die($aErreur[2]);
                         }
@@ -419,7 +434,9 @@ class connectPostreSql {
         $sql->execute();
 //
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sQuery . "\n\n";
             $this->sendMailIncidentQuery($sQuery, $aErreur[2]);
             //die($aErreur[2]);
@@ -432,35 +449,38 @@ class connectPostreSql {
      * 
      * @author
      */
-    public function geocodageIris($numfic){
-        $this->updateGeosireneByAddDepcom($numfic);
-        $this->geocentrecom($numfic);
-        $this->updateLatLngForPOIGeocodeAtCity($numfic);
-        $this->setDcomIris($numfic);
-        $this->setDcomIrisToXXXX($numfic);
-        $this->setDcomIrisTo0000($numfic);
-        $this->setDcomIrisToXXXXWhenDcomirisIsNull($numfic);
-        $this->setDcomIrisTo0000WhenDcomirisIsNull($numfic);
-        $this->setDcomIrisToXXXXWhenResultTypeIsNull($numfic);
-        $this->setDcomIrisTo0000WhenResultTypeIsNull($numfic);
-        $this->updateLatLngWithCityCoordinates($numfic);
-        $this->calculateGeometrieTo3857EPSG($numfic);
+    public function geocodageIris($numfic,$id){
+        $this->updateGeosireneByAddDepcom($numfic,$id);
+        $this->geocentrecom($numfic,$id);
+        $this->updateLatLngForPOIGeocodeAtCity($numfic,$id);
+        $this->setDcomIris($numfic,$id);
+        $this->setDcomIrisToXXXX($numfic,$id);
+        $this->setDcomIrisTo0000($numfic,$id);
+        $this->setDcomIrisToXXXXWhenDcomirisIsNull($numfic,$id);
+        $this->setDcomIrisTo0000WhenDcomirisIsNull($numfic,$id);
+        $this->setDcomIrisToXXXXWhenResultTypeIsNull($numfic,$id);
+        $this->setDcomIrisTo0000WhenResultTypeIsNull($numfic,$id);
+        $this->updateLatLngWithCityCoordinates($numfic,$id);
+        $this->calculateGeometrieTo3857EPSG($numfic,$id);
 
     }
     /**
      * @author faniry 
      * Remplissage de "comirisables"
      */
-    public function updateGeosireneByAddDepcom($numfic){
+    public function updateGeosireneByAddDepcom($numfic,$id){
         $sqlQuery="UPDATE $this->geosirene as g set comirisables = dico.comirisables
-                   FROM corresp.dico_commune_lastref as dico WHERE g.depcom = dico.depcom and num_fic= :num_fic" ;
+                   FROM corresp.dico_commune_lastref as dico WHERE g.depcom = dico.depcom and g.num_fic= :num_fic and g.gid=:gid" ;
         $db=$this->getConnexion();
         $sql=$db->prepare($sqlQuery);
         $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
+        $sql->bindParam(':gid', $id, PDO::PARAM_INT);
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sqlQuery . "\n\n";
             $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
             //die($aErreur[2]);
@@ -472,9 +492,9 @@ class connectPostreSql {
      * @author faniry
      * Remplissage de "geocentrecom" si le geocodage était fait au niveau de commune ou quartier
      */
-    public function geocentrecom($numfic){
+    public function geocentrecom($numfic,$id){
         $sqlQuery="UPDATE $this->geosirene SET geocentrecom =:geocentrecom
-                   WHERE result_type IN (:locality,:municipality) AND num_fic=:num_fic";
+                   WHERE result_type IN (:locality,:municipality) AND num_fic=:num_fic and gid=:gid";
         $db=$this->getConnexion();
         $sql=$db->prepare($sqlQuery);
         $varTrue=true;
@@ -483,11 +503,14 @@ class connectPostreSql {
         $sql->bindParam(':locality', $place[0],PDO::PARAM_STR);
         $sql->bindParam(':municipality',$place[1],PDO::PARAM_STR);
         $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
+        $sql->bindParam(':gid', $id, PDO::PARAM_INT);
 
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sqlQuery . "\n\n";
             $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
             //die($aErreur[2]);
@@ -498,21 +521,24 @@ class connectPostreSql {
      * @author faniry
      *  UPDATE longitude / latitude pour les POIs géocodés à la commune (result_type = 'locality' --> geocentrecom = true)
      */
-    public function updateLatLngForPOIGeocodeAtCity($numfic){
+    public function updateLatLngForPOIGeocodeAtCity($numfic, $id){
         $varTrue=true;
         $varFalse=false;
         $place=array(0=>"locality",1=>"municipality");
         $sqlQuery="UPDATE $this->geosirene SET modifxy = :modifxy  
-                  WHERE geocentrecom= :geocentrecom AND num_fic =:num_fic";
+                  WHERE geocentrecom= :geocentrecom AND num_fic =:num_fic AND gid=:gid";
         $db=$this->getConnexion();
         $sql=$db->prepare($sqlQuery);
         $sql->bindParam(':modifxy', $varTrue,PDO::PARAM_BOOL);
         $sql->bindParam(':geocentrecom', $varTrue,PDO::PARAM_BOOL);
         $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
+        $sql->bindParam(':gid', $id, PDO::PARAM_INT);
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sqlQuery . "\n\n";
             $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
             //die($aErreur[2]);
@@ -523,7 +549,7 @@ class connectPostreSql {
      * @author faniry
      * Attribution du DCOMIRIS COMPLET
      */
-    public function setDcomIris($numfic){
+    public function setDcomIris($numfic,$id){
         $varTrue=true;
         $varFalse=false;
         $place=array(0=>"locality",1=>"municipality");
@@ -534,17 +560,22 @@ class connectPostreSql {
                     AND
                     (ST_intersects(ST_Transform(ST_SetSRID(ST_MakePoint(gm.longitude,gm.latitude),4326),3857),iris.the_geom_3857))
                     AND
-                    (gm.num_fic =:num_fic)";
+                    (gm.num_fic =:num_fic) AND (gm.gid=:gid)"
+                    
+                    ;
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':geocentrecom1',  $varFalse,PDO::PARAM_BOOL);
          $sql->bindParam(':geocentrecom2',  $varTrue,PDO::PARAM_BOOL);
          $sql->bindParam(':comirisables',  $varFalse,PDO::PARAM_BOOL);
          $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
+         $sql->bindParam(':gid', $id, PDO::PARAM_INT);
          $sql->execute();
  
          $aErreur = $sql->errorInfo();
-         if (strlen($aErreur[2]) > 0) {
+         $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
              echo $sqlQuery . "\n\n";
              $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
              //die($aErreur[2]);
@@ -555,7 +586,7 @@ class connectPostreSql {
      * @author faniry
      * Attribution du DCOMIRIS XXXX and dcomiris not null
      */
-    public function setDcomIrisToXXXX($numfic){
+    public function setDcomIrisToXXXX($numfic,$id){
         $varTrue=true;
         $varFalse=false;
         $place=array(0=>"locality",1=>"municipality");
@@ -565,7 +596,9 @@ class connectPostreSql {
                 WHERE dcomiris IS NOT NULL 
                 AND SUBSTR(dcomiris, 1, 5) <>depcom 
                 AND comirisables= :comirisables
-                AND num_fic =:num_fic";
+                AND num_fic =:num_fic 
+                AND gid=:gid
+                ";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':xxxx',  $xxxx,PDO::PARAM_STR);
@@ -574,10 +607,13 @@ class connectPostreSql {
          $sql->bindParam(':modifxy', $varTrue,PDO::PARAM_BOOL);
          $sql->bindParam(':comirisables', $varTrue,PDO::PARAM_BOOL);
          $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
+         $sql->bindParam(':gid', $id, PDO::PARAM_INT);
          $sql->execute();
  
          $aErreur = $sql->errorInfo();
-         if (strlen($aErreur[2]) > 0) {
+         $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
              echo $sqlQuery . "\n\n";
              $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
              //die($aErreur[2]);
@@ -588,7 +624,7 @@ class connectPostreSql {
      * @author faniry
      * Attribution du DCOMIRIS 0000 and dcomiris not null
      */
-    public function setDcomIrisTo0000($numfic){
+    public function setDcomIrisTo0000($numfic,$id){
         $varTrue=true;
         $varFalse=false;
         $mun="municipality";
@@ -599,7 +635,9 @@ class connectPostreSql {
                 WHERE dcomiris IS NOT NULL 
                 AND SUBSTR(dcomiris, 1, 5) <>depcom 
                 AND comirisables= :comirisables
-                AND num_fic =:num_fic";
+                AND num_fic =:num_fic
+                AND gid=:gid
+                ";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':xxxx', $x000,PDO::PARAM_STR);
@@ -608,11 +646,14 @@ class connectPostreSql {
          $sql->bindParam(':modifxy', $varTrue,PDO::PARAM_BOOL);
          $sql->bindParam(':comirisables', $varFalse,PDO::PARAM_BOOL);
          $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
+         $sql->bindParam(':gid', $id, PDO::PARAM_INT);
  
          $sql->execute();
  
          $aErreur = $sql->errorInfo();
-         if (strlen($aErreur[2]) > 0) {
+         $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
              echo $sqlQuery . "\n\n";
              $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
              //die($aErreur[2]);
@@ -622,7 +663,7 @@ class connectPostreSql {
      * @author faniry
      * Attribution du DCOMIRIS XXXX and dcomiris == null
      */
-    public function setDcomIrisToXXXXWhenDcomirisIsNull($numfic){
+    public function setDcomIrisToXXXXWhenDcomirisIsNull($numfic,$id){
         $varTrue=true;
         $varFalse=false;
         $mun="municipality";
@@ -634,7 +675,9 @@ class connectPostreSql {
                 AND comirisables= :comirisables 
                 AND  latitude IS NOT NULL 
                 AND longitude IS NOT NULL 
-                AND num_fic =:num_fic";
+                AND num_fic =:num_fic 
+                AND gid=:gid
+                ";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':xxxx',$xxxx,PDO::PARAM_STR);
@@ -643,11 +686,14 @@ class connectPostreSql {
          $sql->bindParam(':modifxy', $varTrue,PDO::PARAM_BOOL);
          $sql->bindParam(':comirisables', $varTrue,PDO::PARAM_BOOL);
          $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
- 
+         $sql->bindParam(':gid', $id, PDO::PARAM_INT);
+
          $sql->execute();
  
          $aErreur = $sql->errorInfo();
-         if (strlen($aErreur[2]) > 0) {
+         $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
              echo $sqlQuery . "\n\n";
              $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
              //die($aErreur[2]);
@@ -658,7 +704,7 @@ class connectPostreSql {
      * @author faniry
      * Attribution du DCOMIRIS 0000 and dcomiris  null
      */
-    public function setDcomIrisTo0000WhenDcomirisIsNull($numfic){
+    public function setDcomIrisTo0000WhenDcomirisIsNull($numfic,$id){
         $varTrue=true;
         $varFalse=false;
         $mun="municipality";
@@ -670,7 +716,9 @@ class connectPostreSql {
                 AND comirisables= :comirisables 
                 AND  latitude IS NOT NULL 
                 AND longitude IS NOT NULL 
-                AND num_fic =:num_fic";
+                AND num_fic =:num_fic
+                AND gid=:gid
+                ";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':xxxx', $x000,PDO::PARAM_STR);
@@ -679,10 +727,14 @@ class connectPostreSql {
          $sql->bindParam(':modifxy', $varTrue,PDO::PARAM_BOOL);
          $sql->bindParam(':comirisables', $varFalse,PDO::PARAM_BOOL);
          $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
+         $sql->bindParam(':gid', $id, PDO::PARAM_INT);
+
          $sql->execute();
  
          $aErreur = $sql->errorInfo();
-         if (strlen($aErreur[2]) > 0) {
+         $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
              echo $sqlQuery . "\n\n";
              $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
              //die($aErreur[2]);
@@ -693,7 +745,7 @@ class connectPostreSql {
      * @author faniry
      * Attribution du DCOMIRIS XXXX and result_type == null
      */
-    public function setDcomIrisToXXXXWhenResultTypeIsNull($numfic){
+    public function setDcomIrisToXXXXWhenResultTypeIsNull($numfic,$id){
         $varTrue=true;
         $varFalse=false;
         $mun="municipality";
@@ -705,7 +757,9 @@ class connectPostreSql {
                 AND comirisables= :comirisables 
                 AND  latitude IS NOT NULL 
                 AND longitude IS NOT NULL 
-                AND num_fic =:num_fic";
+                AND num_fic =:num_fic
+                AND gid=:gid
+                ";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':xxxx', $xxxx,PDO::PARAM_STR);
@@ -714,10 +768,13 @@ class connectPostreSql {
          $sql->bindParam(':modifxy',  $varTrue,PDO::PARAM_BOOL);
          $sql->bindParam(':comirisables',  $varTrue,PDO::PARAM_BOOL);
          $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
+         $sql->bindParam(':gid', $id, PDO::PARAM_INT);
          $sql->execute();
  
          $aErreur = $sql->errorInfo();
-         if (strlen($aErreur[2]) > 0) {
+         $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
              echo $sqlQuery . "\n\n";
              $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
              //die($aErreur[2]);
@@ -728,7 +785,7 @@ class connectPostreSql {
      * @author faniry
      * Attribution du DCOMIRIS 0000 and result_type == null
      */
-    public function setDcomIrisTo0000WhenResultTypeIsNull($numfic){
+    public function setDcomIrisTo0000WhenResultTypeIsNull($numfic,$id){
         $varTrue=true;
         $varFalse=false;
         $mun="municipality";
@@ -740,7 +797,9 @@ class connectPostreSql {
                 AND comirisables= :comirisables 
                 AND  latitude IS NOT NULL 
                 AND longitude IS NOT NULL 
-                AND num_fic = :num_fic";
+                AND num_fic = :num_fic
+                AND gid=:gid
+                ";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':xxxx',$x000,PDO::PARAM_STR);
@@ -749,10 +808,13 @@ class connectPostreSql {
          $sql->bindParam(':modifxy', $varTrue,PDO::PARAM_BOOL);
          $sql->bindParam(':comirisables', $varFalse,PDO::PARAM_BOOL);
          $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
+         $sql->bindParam(':gid', $id, PDO::PARAM_INT);
          $sql->execute();
  
          $aErreur = $sql->errorInfo();
-         if (strlen($aErreur[2]) > 0) {
+         $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
              echo $sqlQuery . "\n\n";
              $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
              //die($aErreur[2]);
@@ -763,7 +825,7 @@ class connectPostreSql {
      * @author faniry 
      * Si modifxy = TRUE --> On met à jour les coordonnées XY avec le centroïde de la COMMUNE
      */
-    public function updateLatLngWithCityCoordinates($numfic){
+    public function updateLatLngWithCityCoordinates($numfic,$id){
         $varTrue=true;
         $varFalse=false;
         $mun="municipality";
@@ -773,17 +835,22 @@ class connectPostreSql {
         $sqlQuery="UPDATE $this->geosirene as gm SET longitude= ST_X(ST_Centroid(ST_Transform(ST_SetSRID(geo.the_geom_3857,3857),4326)))
         , latitude=ST_Y(ST_Centroid(ST_Transform(ST_SetSRID(geo.the_geom_3857,3857),4326))) 
         FROM geo.commune_geo as geo 
-        WHERE modifxy = :modifxy 
+        WHERE gm.modifxy = :modifxy 
         AND gm.depcom = geo.depcom
-        AND num_fic = :num_fic";
+        AND gm.num_fic = :num_fic
+        AND gm.gid=:gid
+        ";
         $db=$this->getConnexion();
         $sql=$db->prepare($sqlQuery);
         $sql->bindParam(':modifxy', $varTrue,PDO::PARAM_BOOL);
         $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
+        $sql->bindParam(':gid', $id, PDO::PARAM_INT);
         $sql->execute();
  
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sqlQuery . "\n\n";
             $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
             //die($aErreur[2]);
@@ -794,7 +861,7 @@ class connectPostreSql {
      * @author faniry 
      *  Calcul de la géométrie en EPSG:3857 à partir des coordonnées (longitude/latitude en EPSG:4326)
      */
-    public function calculateGeometrieTo3857EPSG($numfic){
+    public function calculateGeometrieTo3857EPSG($numfic,$id){
         $varTrue=true;
         $varFalse=false;
         $mun="municipality";
@@ -805,13 +872,18 @@ class connectPostreSql {
         the_geom_3857 = ST_Transform(ST_SetSRID(ST_MakePoint(longitude,latitude),4326),3857) 
         WHERE longitude IS NOT NULL 
         AND latitude IS NOT NULL
-        AND num_fic = :num_fic";
+        AND num_fic = :num_fic
+        AND gid=:gid
+        ";
          $db=$this->getConnexion();
          $sql=$db->prepare($sqlQuery);
          $sql->bindParam(':num_fic', $numfic, PDO::PARAM_INT);
+         $sql->bindParam(':gid', $id, PDO::PARAM_INT);
          $sql->execute();
          $aErreur = $sql->errorInfo();
-         if (strlen($aErreur[2]) > 0) {
+         $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
              echo $sqlQuery . "\n\n";
              $this->sendMailIncidentQuery($sqlQuery, $aErreur[2]);
              //die($aErreur[2]);
@@ -886,7 +958,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sql->queryString . "\n\n";
             die($aErreur[2]);
         }
@@ -962,7 +1036,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sql->queryString . "\n\n";
             die($aErreur[2]);
         }
@@ -1039,7 +1115,9 @@ class connectPostreSql {
 //        $sql->execute();
 //
 //        $aErreur = $sql->errorInfo();
-//        if (strlen($aErreur[2]) > 0) {
+//        $error= $aErreur[2] ?? '';
+        
+        //if (strlen($error) > 0) {
 //            echo $sql->queryString . "\n\n";
 //            die($aErreur[2]);
 //        }
@@ -1114,7 +1192,9 @@ class connectPostreSql {
 //        $sql->execute();
 //
 //        $aErreur = $sql->errorInfo();
-//        if (strlen($aErreur[2]) > 0) {
+//        $error= $aErreur[2] ?? '';
+        
+        //if (strlen($error) > 0) {
 //            echo $sql->queryString . "\n\n";
 //            die($aErreur[2]);
 //        }
@@ -1189,7 +1269,9 @@ class connectPostreSql {
 //        $sql->execute();
 //
 //        $aErreur = $sql->errorInfo();
-//        if (strlen($aErreur[2]) > 0) {
+//        $error= $aErreur[2] ?? '';
+        
+        //if (strlen($error) > 0) {
 //            echo $sql->queryString . "\n\n";
 //            die($aErreur[2]);
 //        }
@@ -1257,7 +1339,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sql->queryString . "\n\n";
             die($aErreur[2]);
         }
@@ -1333,7 +1417,9 @@ class connectPostreSql {
                         $sql->execute();
 
                         $aErreur = $sql->errorInfo();
-                        if (strlen($aErreur[2]) > 0) {
+                        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
                             echo $sql->queryString . "\n\n";
                             die($aErreur[2]);
                         }
@@ -1385,7 +1471,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sql->queryString . "\n\n";
             die($aErreur[2]);
         }
@@ -1459,7 +1547,9 @@ class connectPostreSql {
                         $sql->execute();
 
                         $aErreur = $sql->errorInfo();
-                        if (strlen($aErreur[2]) > 0) {
+                        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
                             echo $sql->queryString . "\n\n";
                             die($aErreur[2]);
                         }
@@ -1473,8 +1563,7 @@ class connectPostreSql {
 
     public function insertGeosirene($oStock, $aTabChgt, $numFic, $sDateFormat, $bCreation, $denominationGeoscar) {
 
-
-//die(print_r($oStock));
+        //die(print_r($oStock));
         //echo '------------------------------insertGeosirene \n';
         $bEntreDiffComm = 'FALSE';
         $bAdresseChange = 'FALSE';
@@ -1522,7 +1611,7 @@ class connectPostreSql {
         enseigne3etablissement, denominationusuelleetablissement, activiteprincipaleetablissement, nomenclatureactiviteprincipaleetablissement, 
         caractereemployeuretablissement,
         entree_champ_diffusion_commerciale, changement_activiteprincipaleetablissement, demenagement, changement_etat_administratif, 
-	modification_tranche_nb_salaries, num_fic, date_integration, creation, denomination_geoscar)
+	    modification_tranche_nb_salaries, num_fic, date_integration, creation, denomination_geoscar)
         VALUES 
         (:siren, :nic, :siret, :statutdiffusionetablissement, :datecreationetablissement, 
         :trancheeffectifsetablissement, :anneeeffectifsetablissement, :activiteprincipaleregistremetiersetablissement, 
@@ -1537,10 +1626,10 @@ class connectPostreSql {
         :libellepaysetranger2etablissement, :datedebut, :etatadministratifetablissement, :enseigne1etablissement, :enseigne2etablissement, 
         :enseigne3etablissement, :denominationusuelleetablissement, :activiteprincipaleetablissement, :nomenclatureactiviteprincipaleetablissement, 
         :caractereemployeuretablissement, :entree_champ_diffusion_commerciale, :changement_activiteprincipaleetablissement, :demenagement, :changement_etat_administratif, 
-	:modification_tranche_nb_salaries, :num_fic, :date_integration, :creation, :denomination_geoscar)";
+	    :modification_tranche_nb_salaries, :num_fic, :date_integration, :creation, :denomination_geoscar)";
 
         //echo "--------------------ACTICITE = " . $oStock['activiteprincipaleetablissement'] . "\n";
-        $sActivite = str_replace(".", "", $oStock['activiteprincipaleetablissement']);
+        $sActivite = str_replace(".", "", ($oStock['activiteprincipaleetablissement'] ?? ""));
         //echo "--------------------ACTICITE APRES = " . $sActivite . "\n";
 
         $db = $this->getConnexion();
@@ -1610,12 +1699,15 @@ class connectPostreSql {
         }
 //
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sReq . "\n\n";
             $this->sendMailIncidentQuery($sReq, $aErreur[2]);
             //die($aErreur[2]);
         }
         //echo "============================================ ADRESSE CHG = " . $this->iCountChgAdresse . "===================================================\n\n";
+        return $db->lastInsertId();
     }
 
 //    public function insertGeosireneProd($oStock, $aTabChgt, $numFic, $sDateFormat, $bCreation) {
@@ -1753,7 +1845,9 @@ class connectPostreSql {
 //        $sql->execute();
 //
 //        $aErreur = $sql->errorInfo();
-//        if (strlen($aErreur[2]) > 0) {
+//        $error= $aErreur[2] ?? '';
+        
+       // if (strlen($error) > 0) {
 //            echo $sql->queryString . "\n\n";
 //            die($aErreur[2]);
 //        }
@@ -1894,7 +1988,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sql->queryString . "\n\n";
             die($aErreur[2]);
         }
@@ -1909,7 +2005,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sql->queryString . "\n\n";
             die($aErreur[2]);
         } else {
@@ -2008,7 +2106,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sql->queryString . "\n\n";
             die($aErreur[2]);
         }
@@ -2110,7 +2210,9 @@ class connectPostreSql {
         $sql->execute();
 //
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sReq . "\n\n";
             $this->sendMailIncidentQuery($sReq, $aErreur[2]);
             //die($aErreur[2]);
@@ -2127,7 +2229,9 @@ class connectPostreSql {
 
 
         /* $aErreur = $sql->errorInfo();
-          if (strlen($aErreur[2]) > 0) {
+          $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
           echo $sql->queryString . "\n\n";
           die($aErreur[2]);
           } */
@@ -2225,7 +2329,9 @@ class connectPostreSql {
 //        $sql->execute();
 //
 //        $aErreur = $sql->errorInfo();
-//        if (strlen($aErreur[2]) > 0) {
+//        $error= $aErreur[2] ?? '';
+        
+        //if (strlen($error) > 0) {
 //            echo $sql->queryString . "\n\n";
 //            die($aErreur[2]);
 //        }
@@ -2316,7 +2422,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sReq . "\n";
             $this->sendMailIncidentQuery($sReq, $aErreur[2]);
             //die($aErreur[2]);
@@ -2408,7 +2516,9 @@ class connectPostreSql {
 //        $sql->execute();
 //
 //        $aErreur = $sql->errorInfo();
-//        if (strlen($aErreur[2]) > 0) {
+//        $error= $aErreur[2] ?? '';
+        
+        //if (strlen($error) > 0) {
 //            echo $sReq . "\n";
 //            die($aErreur[2]);
 //        }
@@ -2491,7 +2601,7 @@ class connectPostreSql {
         :libellepaysetranger2etablissement, :datedebut, :etatadministratifetablissement, :enseigne1etablissement, :enseigne2etablissement, 
         :enseigne3etablissement, :denominationusuelleetablissement, :activiteprincipaleetablissement, :nomenclatureactiviteprincipaleetablissement, 
         :caractereemployeuretablissement, :date_integration);";
-        $sActivitePrincipale = str_replace(".", "", $oStock->activitePrincipaleRegistreMetiersEtablissement);
+        $sActivitePrincipale = str_replace(".", "", ($oStock->activitePrincipaleRegistreMetiersEtablissement ?? "") );
 
         $sql = $db->prepare($sReq);
         $sql->bindParam(':siren', $oStock->siren, PDO::PARAM_STR);
@@ -2546,7 +2656,9 @@ class connectPostreSql {
         $sql->execute();
         $sql->closeCursor();
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sReq . "\n";
             die($aErreur[2]);
         }
@@ -2580,7 +2692,7 @@ class connectPostreSql {
         :libellepaysetranger2etablissement, :datedebut, :etatadministratifetablissement, :enseigne1etablissement, :enseigne2etablissement, 
         :enseigne3etablissement, :denominationusuelleetablissement, :activiteprincipaleetablissement, :nomenclatureactiviteprincipaleetablissement, 
         :caractereemployeuretablissement, :date_integration);";
-        $sActivitePrincipale = str_replace(".", "", $oStock['activitePrincipaleRegistreMetiersEtablissement']);
+        $sActivitePrincipale = str_replace(".", "", ($oStock['activitePrincipaleRegistreMetiersEtablissement'] ?? "" ));
 
         $sql = $db->prepare($sReq);
         $sql->bindParam(':siren', $oStock['siren'], PDO::PARAM_STR);
@@ -2636,7 +2748,9 @@ class connectPostreSql {
 
         //$sql->closeCursor();
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sReq . "\n";
             die($aErreur[2]);
         }
@@ -2733,7 +2847,7 @@ class connectPostreSql {
             $oEtablissement->periodesEtablissement[0]->enseigne2Etablissement,
             $oEtablissement->periodesEtablissement[0]->enseigne3Etablissement,
             $oEtablissement->periodesEtablissement[0]->denominationUsuelleEtablissement,
-            str_replace(".", "", $oEtablissement->periodesEtablissement[0]->activitePrincipaleEtablissement),
+            str_replace(".", "", ($oEtablissement->periodesEtablissement[0]->activitePrincipaleEtablissement ?? "")),
             $oEtablissement->periodesEtablissement[0]->nomenclatureActivitePrincipaleEtablissement,
             $oEtablissement->periodesEtablissement[0]->caractereEmployeurEtablissement,
             $sAdresse, "1");
@@ -2820,16 +2934,16 @@ class connectPostreSql {
         $enseigneRetour = "";
 
         if (strpos($enseigne, "-")) {
-            $enseigneRetour = str_replace("-", "+", $enseigne);
+            $enseigneRetour = str_replace("-", "+", ($enseigne ?? ""));
         }
         if (strpos($enseigne, "/")) {
-            $enseigneRetour = str_replace("/", "+", $enseigne);
+            $enseigneRetour = str_replace("/", "+", ($enseigne ?? ""));
         }
         if (strpos($enseigne, ".")) {
-            $enseigneRetour = str_replace(".", "+", $enseigne);
+            $enseigneRetour = str_replace(".", "+", ($enseigne ?? ""));
         }
         if (strpos($enseigne, " ")) {
-            $enseigneRetour = str_replace(" ", "+", $enseigne);
+            $enseigneRetour = str_replace(" ", "+", ($enseigne ?? ""));
         }
         return $enseigneRetour;
     }
@@ -2841,7 +2955,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sQuery . "\n";
             die($aErreur[2]);
         } else {
@@ -2951,7 +3067,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sQuery . "\n";
             die($aErreur[2]);
         }
@@ -3053,7 +3171,7 @@ class connectPostreSql {
         $sql->bindParam(':enseigne2etablissement', $oStock['enseigne2etablissement'], PDO::PARAM_STR);
         $sql->bindParam(':enseigne3etablissement', $oStock['enseigne3etablissement'], PDO::PARAM_STR);
         $sql->bindParam(':denominationusuelleetablissement', $oStock['denominationusuelleetablissement'], PDO::PARAM_STR);
-        $sql->bindValue(':activiteprincipaleetablissement', str_replace(".", "", $oStock['activiteprincipaleetablissement']), PDO::PARAM_STR);
+        $sql->bindValue(':activiteprincipaleetablissement', str_replace(".", "", ($oStock['activiteprincipaleetablissement'] ?? "")), PDO::PARAM_STR);
         $sql->bindParam(':nomenclatureactiviteprincipaleetablissement', $oStock['nomenclatureactiviteprincipaleetablissement'], PDO::PARAM_STR);
         $sql->bindParam(':caractereemployeuretablissement', $oStock['caractereemployeuretablissement'], PDO::PARAM_STR);
         $sql->bindParam(':date_integration', $dateIntegration, PDO::PARAM_STR);
@@ -3065,7 +3183,9 @@ class connectPostreSql {
         $sql->execute();
 //
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sQuery . "\n";
             $this->sendMailIncidentQuery($sQuery, $aErreur[2]);
         }
@@ -3189,7 +3309,9 @@ class connectPostreSql {
 //        $sql->execute();
 //
 //        $aErreur = $sql->errorInfo();
-//        if (strlen($aErreur[2]) > 0) {
+//        $error= $aErreur[2] ?? '';
+        
+        //if (strlen($error) > 0) {
 //            echo $sQuery . "\n";
 //            die($aErreur[2]);
 //        }
@@ -3412,7 +3534,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         }
     }
@@ -3427,7 +3551,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         }
     }
@@ -3452,7 +3578,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sql->queryString . "\n\n";
             die($aErreur[2]);
         }
@@ -3497,7 +3625,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sql->queryString . "\n\n";
             die($aErreur[2]);
         }
@@ -3510,7 +3640,9 @@ class connectPostreSql {
         $sql = $db->prepare($sQuery);
         $sql->execute();
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sql->queryString . "\n\n";
             die($aErreur[2]);
         } else {
@@ -3532,7 +3664,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         }
     }
@@ -3562,7 +3696,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         }
     }
@@ -3582,7 +3718,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         }
     }
@@ -3602,7 +3740,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         }
     }
@@ -3618,7 +3758,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         }
     }
@@ -3631,7 +3773,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         } else {
             echo "TABLE CREE \n";
@@ -3651,7 +3795,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         }
     }
@@ -3669,7 +3815,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         }
     }
@@ -3685,7 +3833,9 @@ class connectPostreSql {
 
         $aErreur = $sql->errorInfo();
 
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         } else {
             return $sql->fetchAll(PDO::FETCH_ASSOC);
@@ -3702,7 +3852,9 @@ class connectPostreSql {
 
         $aErreur = $sql->errorInfo();
 
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         }
     }
@@ -3716,7 +3868,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         }
     }
@@ -3762,7 +3916,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         }
     }
@@ -3775,7 +3931,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         }
     }
@@ -3789,7 +3947,9 @@ class connectPostreSql {
 //        $sql->execute();
 //
 //        $aErreur = $sql->errorInfo();
-//        if (strlen($aErreur[2]) > 0) {
+//        $error= $aErreur[2] ?? '';
+        
+        //if (strlen($error) > 0) {
 //            die($aErreur[2]);
 //        }
 //    }
@@ -3804,7 +3964,9 @@ class connectPostreSql {
 
         $aErreur = $sql->errorInfo();
 
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         } else {
             $aRes = $sql->fetchAll(PDO::FETCH_ASSOC);
@@ -3926,7 +4088,9 @@ class connectPostreSql {
             $sql->execute();
 //
             $aErreur = $sql->errorInfo();
-            if (strlen($aErreur[2]) > 0) {
+            $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
                 echo $sQuery . "\n\n";
                 $this->sendMailIncidentQuery($sQuery, $aErreur[2]);
                 //die($aErreur[2]);
@@ -3944,7 +4108,9 @@ class connectPostreSql {
 
         $aErreur = $sql->errorInfo();
 
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         } else {
             $aRes = $sql->fetchAll(PDO::FETCH_ASSOC);
@@ -4063,7 +4229,9 @@ class connectPostreSql {
             $sql->execute();
 //
             $aErreur = $sql->errorInfo();
-            if (strlen($aErreur[2]) > 0) {
+            $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
                 echo $sQuery . "\n\n";
                 $this->sendMailIncidentQuery($sQuery, $aErreur[2]);
                 //die($aErreur[2]);
@@ -4080,7 +4248,9 @@ class connectPostreSql {
 //
 //        $aErreur = $sql->errorInfo();
 //
-//        if (strlen($aErreur[2]) > 0) {
+//        $error= $aErreur[2] ?? '';
+        
+        //if (strlen($error) > 0) {
 //            die($aErreur[2]);
 //        } else {
 //            $aRes = $sql->fetchAll(PDO::FETCH_ASSOC);
@@ -4199,7 +4369,9 @@ class connectPostreSql {
 //            $sql->execute();
 //
 //            $aErreur = $sql->errorInfo();
-//            if (strlen($aErreur[2]) > 0) {
+//            $error= $aErreur[2] ?? '';
+        
+        //if (strlen($error) > 0) {
 //                die($aErreur[2]);
 //            }
 //        }
@@ -4213,7 +4385,9 @@ class connectPostreSql {
 //
 //        $aErreur = $sql->errorInfo();
 //
-//        if (strlen($aErreur[2]) > 0) {
+//        $error= $aErreur[2] ?? '';
+        
+        //if (strlen($error) > 0) {
 //            die($aErreur[2]);
 //        } else {
 //            $aRes = $sql->fetchAll(PDO::FETCH_ASSOC);
@@ -4332,7 +4506,9 @@ class connectPostreSql {
 //            $sql->execute();
 //
 //            $aErreur = $sql->errorInfo();
-//            if (strlen($aErreur[2]) > 0) {
+//            $error= $aErreur[2] ?? '';
+        
+        //if (strlen($error) > 0) {
 //                die($aErreur[2]);
 //            }
 //        }
@@ -4347,7 +4523,9 @@ class connectPostreSql {
         $sql->execute();
         $aErreur = $sql->errorInfo();
 
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         } else {
             return $sql->fetchAll(PDO::FETCH_ASSOC);
@@ -4356,7 +4534,7 @@ class connectPostreSql {
 
     public function getGeosireneNumFic1() {
 
-        //if ($gid != 0) {
+        ////if ($gid != 0) {
 
         $sQuery = "SELECT * FROM poi.geosirene WHERE num_fic = 1 AND tel IS NULL AND baf IS true AND creation IS true "
                 . "AND denomination_geoscar IS NOT null AND adresse IS NOT null ORDER BY gid";
@@ -4368,7 +4546,9 @@ class connectPostreSql {
         $sql->execute();
         $aErreur = $sql->errorInfo();
 
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         } else {
             return $sql->fetchAll(PDO::FETCH_ASSOC);
@@ -4389,7 +4569,9 @@ class connectPostreSql {
         $sql->execute();
         $aErreur = $sql->errorInfo();
 
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         } else {
             return $sql->fetchAll(PDO::FETCH_ASSOC);
@@ -4410,7 +4592,9 @@ class connectPostreSql {
         $sql->execute();
         $aErreur = $sql->errorInfo();
 
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         } else {
             return $sql->fetchAll(PDO::FETCH_ASSOC);
@@ -4436,7 +4620,9 @@ class connectPostreSql {
         $sql->execute();
         $aErreur = $sql->errorInfo();
 
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             die($aErreur[2]);
         } else {
             return $sql->fetchAll(PDO::FETCH_ASSOC);
@@ -4501,10 +4687,10 @@ class connectPostreSql {
 
     public function envoiMailFinTraitement() {
 
-        $sQuery = "SELECT public.bdf_envoi_mail_recap_maj_fin_insee()";
-        $db = $this->getConnexion();
-        $sql = $db->prepare($sQuery);
-        $sql->execute();
+        // $sQuery = "SELECT public.bdf_envoi_mail_recap_maj_fin_insee()";
+        // $db = $this->getConnexion();
+        // $sql = $db->prepare($sQuery);
+        // $sql->execute();
     }
     
     
@@ -4618,7 +4804,9 @@ class connectPostreSql {
 
         $aErreur = $sql->errorInfo();
 
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
 
             die($aErreur[2]);
         } else {
@@ -4656,7 +4844,9 @@ class connectPostreSql {
         $sql->bindParam(':siret', $sSiret, PDO::PARAM_STR);
         $sql->execute();
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sSql . "\n\n";
             $this->sendMailIncidentQuery($sSql, $aErreur[2]);
             //die($aErreur[2]);
@@ -4673,7 +4863,9 @@ class connectPostreSql {
         $sql->bindParam(':siret', $sSiret, PDO::PARAM_STR);
         $sql->execute();
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sSql . "\n\n";
             $this->sendMailIncidentQuery($sSql, $aErreur[2]);
             //die($aErreur[2]);
@@ -4836,7 +5028,9 @@ class connectPostreSql {
         $sql->execute();
 //
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sQuery . "\n\n";
             $this->sendMailIncidentQuery($sQuery, $aErreur[2]);
             //die($aErreur[2]);
@@ -4852,7 +5046,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sQuery . "<br>";
             die($aErreur[2]);
         } else {
@@ -4871,7 +5067,9 @@ class connectPostreSql {
         $sql->execute();
 
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sQuery . "<br>";
             die($aErreur[2]);
         } else {
@@ -5072,7 +5270,9 @@ class connectPostreSql {
         $sql->execute();
 //
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sQuery . "\n\n";
             $this->sendMailIncidentQuery($sQuery, $aErreur[2]);
             //die($aErreur[2]);
@@ -5225,7 +5425,9 @@ class connectPostreSql {
         $sql->execute();
 //
         $aErreur = $sql->errorInfo();
-        if (strlen($aErreur[2]) > 0) {
+        $error= $aErreur[2] ?? '';
+        
+        if (strlen($error) > 0) {
             echo $sQuery . "\n\n";
             $this->sendMailIncidentQuery($sQuery, $aErreur[2]);
             //die($aErreur[2]);
@@ -5256,5 +5458,47 @@ class connectPostreSql {
 
         $sql->execute();
     }
+
+    public function populateGidToIrisable($gid,$numfic){
+        $sql="INSERT INTO poi.geosiren_have_to_iris (gid,numfic) VALUES (:gid,:numfic);";
+        $db=$this->getConnexion();
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':gid', $gid, PDO::PARAM_INT);
+        $stmt->bindParam(':numfic', $numfic, PDO::PARAM_INT);
+        $stmt->execute();
+
+    }
+
+   
+
+    public function updateGidStatusDone($gid){
+        $done=true;
+        $sql = "UPDATE poi.geosiren_have_to_iris SET done = :done WHERE gid = :gid";
+        $db = $this->getConnexion();
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':done', $done, PDO::PARAM_BOOL);
+        $stmt->bindParam(':gid', $gid, PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    public function geocodeIrisAndUpdateTableGeosirenHaveToIris(){
+        // $done=false;
+        $sql="SELECT * FROM poi.geosirene WHERE dcomiris IS NULL AND num_fic IS NOT NULL AND DEPCOM IS NOT NULL ORDER BY gid DESC";
+        $db=$this->getConnexion();
+        $stmt = $db->prepare($sql);
+        // $stmt->bindParam('done', $done, PDO::PARAM_BOOL);
+        $stmt->execute();
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+           
+            $gid=$row["gid"];
+            $numfic=$row["num_fic"];
+            echo "gid: ".$gid ." numfic: ".$numfic. "\r\n";
+            $this->geocodageIris($numfic,$gid);
+            //$this->updateGidStatusDone($gid);
+
+        }
+        echo "terminé";
+    }
+    
 
 }

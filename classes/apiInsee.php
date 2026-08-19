@@ -8,6 +8,7 @@
  */
 class apiInsee {
 
+    private $urlSirenV311="https://api.insee.fr/api-sirene/3.11/siret?q=dateDernierTraitementEtablissement:";
     public function sendRequestDatemAJ($token) {
 
         $result = $this->sendRequest($token, "https://api.insee.fr/entreprises/sirene/V3/informations");
@@ -47,9 +48,9 @@ class apiInsee {
         //echo "DATE  = ------------------------------- ".$date."<br>";
         //$result = $this->sendRequest($token, "https://api.insee.fr/entreprises/sirene/V3/siret?q=dateDernierTraitementEtablissement:".$date);
         //periode(etablissementSiege:false)
-        echo "requete ==========================> https://api.insee.fr/entreprises/sirene/V3/siret?q=dateDernierTraitementEtablissement:" . $date . "&curseur=" . $sCurseur . "&nombre=4000<br>";
+        echo "requete ==========================>". $this->urlSirenV311. $date . "&curseur=" . $sCurseur . "&nombre=4000<br>";
         //$result = $this->sendRequest($token, "https://api.insee.fr/entreprises/sirene/V3/siret?q=dateDernierTraitementEtablissement:".$date."&curseur=".$sCurseur."&nombre=100");
-        $result = $this->sendRequest($token, "https://api.insee.fr/entreprises/sirene/V3/siret?q=dateDernierTraitementEtablissement:" . $date . "&curseur=" . $sCurseur . "&nombre=4000");
+        $result = $this->sendRequest($token, $this->urlSirenV311 . $date . "&curseur=" . $sCurseur . "&nombre=4000");
 
         $resultJSON = null;
         if ($result) {
@@ -71,7 +72,10 @@ class apiInsee {
         curl_setopt($ch, CURLOPT_TIMEOUT, 0);
 
         $headers = array();
-        $headers[] = "Authorization: Bearer " . $token;
+        $headers = [
+            "accept: application/json;charset=utf-8;qs=1",
+            "X-INSEE-Api-Key-Integration: 827e62d2-6515-4d8c-be62-d265154d8c8d"
+        ];
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
         //$result = curl_exec($ch);
@@ -103,9 +107,11 @@ class apiInsee {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, "grant_type=client_credentials");
         curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch,CURLOPT_VERBOSE,true);
         // AJOUT
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
+        curl_setopt($ch, CURLOPT_CAINFO, "C:\\php\\extras\\ssl\\cacert.pem");
         curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
 
         $headers = array();
@@ -115,6 +121,7 @@ class apiInsee {
 
         $result = curl_exec($ch);
         $resultJSON = json_decode($result);
+        echo $resultJSON;
         if (curl_errno($ch)) {
             echo 'Error:' . curl_error($ch);
         } else {
@@ -169,15 +176,17 @@ class apiInsee {
         return $resultJSON;
     }
 
-    public function getInfosFromDate($token, $date, $curser = "*", $number = 100) {
+    public function getInfosFromDate( $date, $curser = "*", $number = 100) {
 
         $ret = array();
+       
 
-        echo "https://api.insee.fr/entreprises/sirene/V3/siret?q=dateDernierTraitementEtablissement:" . $date . "&curseur=" . $curser . "&nombre=" . $number . "\n";
+        echo $this->urlSirenV311. $date . "&curseur=" . $curser . "&nombre=" . $number . "\n";
 
 
-        $urlGET = "https://api.insee.fr/entreprises/sirene/V3/siret?q=dateDernierTraitementEtablissement:" . $date . "&curseur=" . $curser . "&nombre=" . $number;
+        //$urlGET = "https://api.insee.fr/entreprises/sirene/V3/siret?q=dateDernierTraitementEtablissement:" . $date . "&curseur=" . $curser . "&nombre=" . $number;
 
+        $urlGET= $this->urlSirenV311.$date . "&curseur=" . $curser . "&nombre=" . $number;
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
@@ -189,10 +198,10 @@ class apiInsee {
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => "GET",
             CURLOPT_POSTFIELDS => "",
-            CURLOPT_HTTPHEADER => array(
-                "Authorization: Bearer " . $token,
-                "cache-control: no-cache"
-            ),
+            CURLOPT_HTTPHEADER => [
+                "accept: application/json;charset=utf-8;qs=1",
+                "X-INSEE-Api-Key-Integration: 827e62d2-6515-4d8c-be62-d265154d8c8d"
+            ]
         ));
 
         curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);

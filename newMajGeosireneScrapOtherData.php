@@ -11,7 +11,6 @@ require_once  'SearchPj.php';
 
 $oApiBano = new apiBano();
 $oApiInsee = new apiInsee();
-
 $oConnectPG = new connectPostreSql();
 $oUtil = new Util();
 $oGeosireneTraitement = new geosireneTraitement();
@@ -26,7 +25,7 @@ date_default_timezone_set('UTC');
 
 $bDeuxJours = true;
 $oTestBano = $oApiBano->testBanoOK();
-//
+var_dump($oTestBano);
 if (!$oTestBano->features) {
     $oConnectPG->sendMailIncidentBano();
     die();
@@ -41,7 +40,7 @@ while ($bDeuxJours) {
     //die(print_r($sDateLastTraiement));
     echo "\nDERNIER JOUR TRAITE = " . $sDateLastTraiement . "\n";
 
-    $hier = strftime("%Y-%m-%d", mktime(0, 0, 0, date('m'), date('d') - 1, date('Y')));
+    $sDateFormat = strftime("%Y-%m-%d", mktime(0, 0, 0, date('m'), date('d') - 1, date('Y')));
 
     // if ($sDateLastTraiement == $hier) {
     //     die("JOUR DEJA TRAITE");
@@ -55,24 +54,10 @@ while ($bDeuxJours) {
     //     $bDeuxJours = false;
     //     $sDateFormat = strftime("%Y-%m-%d", mktime(0, 0, 0, date('m'), date('d') - 1, date('Y')));
     // }
-    //"2024-05-01",
-    //"2024-05-02",
-    //"2024-05-03", "2024-05-04", "2024-05-05", 
-    //"2024-05-06", "2024-05-07", 
-    //"2024-05-08", "2024-05-09", "2024-05-10", "2024-05-11", "2024-05-12", "2024-05-13", "2024-05-14", 
-    //"2024-05-15",
-    //   "2024-05-16", "2024-05-17", "2024-05-18", "2024-05-19", "2024-05-20", "2024-05-21", 
-    //"2024-05-22", 
-    //"2024-05-23", "2024-05-24", "2024-05-25", "2024-05-26", "2024-05-27","2024-05-28", 
-        ///"2024-05-29", "2024-05-30", "2024-05-31", "2024-06-01", "2024-06-02", "2024-06-03",
-        //"2024-06-04", 
-        //"2024-06-05", "2024-06-06", "2024-06-07", "2024-06-08", "2024-06-09", "2024-06-10", "2024-06-11", 
-        //"2024-06-12",
-    $sDateFormats = [
-       "2025-08-20"
-    ];    
+
+    
     //echo "\nTRAIETEMENT EN COURS = " . $sDateFormat . "\n";
-    //$sDateFormat = strftime("%Y-%m-%d", mktime(0, 0, 0, date('m'), date('d') - 1, date('Y'))); 
+    // $sDateFormat = strftime("%Y-%m-%d", mktime(0, 0, 0, date('m'), date('d') - 1, date('Y'))); 
 
 
     /*     * ************************************************************************************************************* */
@@ -88,21 +73,20 @@ while ($bDeuxJours) {
 
 
     // ON RECUPERE LE JETON POUR L'API INSEE
-    // echo "*********************DATE => " . $sDateFormat . "**************************\n";
+    echo "*********************DATE => " . $sDateFormat . "**************************\n";
 
     while ($bContinue) {
 
-        foreach($sDateFormats as $s){ 
-            $ss=explode("-",$s);
+        //foreach($sDateFormats as $s){ 
+            $ss=explode("-",$sDateFormat);
             $sDateFormat = strftime("%Y-%m-%d", mktime(0, 0, 0, $ss[1], $ss[2] , $ss[0]));
             echo "\nTRAIETEMENT EN COURS = " . $sDateFormat . "\n";       
-            $resultJSON_old = $oApiInsee->getJetonInsee();
+            // $resultJSON_old = $oApiInsee->getJetonInsee();
 
-            $aRes = $oApiInsee->revokeJetonInsee($resultJSON_old->access_token);
+            // $aRes = $oApiInsee->revokeJetonInsee($resultJSON_old->access_token);
 
-            $resultJSON = $oApiInsee->getJetonInsee();
-            var_dump($resultJSON);
-        
+            $resultJSON = []; //$oApiInsee->getJetonInsee();
+
             //unlink(FILE_RESULT_POUR_BANO);
             //unlink(FILE_SORTIE_BANO);
             //unlink(FILE_LOG_MAJ);
@@ -117,7 +101,7 @@ while ($bDeuxJours) {
 
                 // INSERT EN TABLE TEMPORAIRE 
                 $oGeosireneTraitement->etape1Bis($resultJSON, $sDateFormat);
-                //die();
+
                 /*             * *********************************ETAPE 2*********************************************************** */
 
                 $off = 0;
@@ -247,14 +231,13 @@ while ($bDeuxJours) {
                         // ON INSERT LES MODIFS DE LA JOURNEE
                         $gid=$oConnectPG->insertGeosirene($aTmpStock[$i], $aArrayModifs, $numfic, $sDateFormat, $bCreation, $denominationGeoscar);
                         echo( "gid inseré ". $gid);
-                        
                         // ON UPDATE AVEC LES INFOS DE BANO
                         $sAdresse = $oConnectPG->formatAdressePourBanoTableau($aTmpStock[$i]);
                         $oResult = $oApiBano->sendRequest($sAdresse);
 
                         $oConnectPG->updateGeosireneBanoFromApi($oResult, $aTmpStock[$i]['siret'], $numfic);
                         $oConnectPG->populateGidToIrisable($gid,$numfic);
-                        //$oConnectPG->geocodageIris($numfic,$gid);
+                        // $oConnectPG->geocodageIris($numfic,$gid);
 
 
                         //echo "----------------FIN-UPDATE BANO---------------------\n\n";
@@ -315,11 +298,7 @@ while ($bDeuxJours) {
                 echo "******************************************FIN TRAIMEMENT************************************************\n";
                 //}
             }
-
-            $fichierOuvert = fopen("log.txt", 'a'); // Ouvrir le fichier à chaque itération
-            fwrite($fichierOuvert, "$sDateFormat\n");
-            fclose($fichierOuvert); // Fermer le fichier à chaque itération
-        }//boucle for
+        //}//boucle for
         //$results= $oConnectPG->getNewSirenInListeSiren();
         // foreach($results as $result){
         //     $siren=$result["siren"];

@@ -242,8 +242,8 @@ class geosireneTraitement {
                 }
 
                 //ON chope les données de l'API INSEE
-                $retDate = $oApiInsee->getInfosFromDate($resultJSON->access_token, $sDateFormat, $sCurseurSuivant, "4000");
-
+                $retDate = $oApiInsee->getInfosFromDate($sDateFormat, $sCurseurSuivant, "4000");
+                //var_dump($retDate);
                 if ($retDate['code'] == 200) {
 
                     //Util::logMajGeosirene("Données INSEE OK  ");

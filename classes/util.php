@@ -107,8 +107,8 @@ class Util {
                     //}
                     
                     if ($keyStok == "activiteprincipaleetablissement") {
-                            $value = str_replace(".", "", $value);
-                            $valueStock = str_replace(".", "", $valueStock);
+                            $value = str_replace(".", "", ($value ?? ""));
+                            $valueStock = str_replace(".", "", ($valueStock ?? ""));
                         }
 
                     // ON CHERCHE SI LES VALEURS SONT DIFFERENTES ET PRESENTES DANS $aArraySearch

@@ -51,7 +51,7 @@ define('CLE_INSEE_CONSO_2',  "hKZPaT8JoqppdxfvHl_7LfYjMDAa");
 define('CLE_INSEE_SECRET_2', "rkgvaRzKV441kUjrFYl6aYfyzCka");
 define('DB_NAME',"geosirene");
 define('DB_NAME_CUBE',"geocube");
-define('DB_HOST',"localhost");
+define('DB_HOST',"54.36.247.53");
 define('DB_USER',"postgres");
 define('DB_PASS',"Gt24#Poe9681#37uHtR");
 define('DB_PORT',"5432");
