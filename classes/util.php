@@ -257,8 +257,63 @@ class Util {
          $iYear = substr($sDate, 0, 4);
         $iMonth = substr($sDate, 5, 2);
         $iDay = substr($sDate, 8, 4);
-        
+
         return utf8_encode(strftime("%A %d %B %Y", mktime(0, 0, 0, $iMonth, $iDay, $iYear)));
+    }
+
+    public static function sendDiscordMessage($sMessage, $bError = false) {
+
+        $sScript = php_sapi_name() === 'cli' ? basename($_SERVER['argv'][0] ?? 'cli') : ($_SERVER['SCRIPT_NAME'] ?? '');
+        $sFullMessage = "[" . date('Y-m-d H:i:s') . "] [" . $sScript . "]\n" . $sMessage;
+
+        if ($bError) {
+            $aLignes = array();
+            foreach (debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS) as $aFrame) {
+                if (isset($aFrame['file'])) {
+                    $aLignes[] = basename($aFrame['file']) . ':' . $aFrame['line'] . ' ' . ($aFrame['class'] ?? '') . ($aFrame['type'] ?? '') . $aFrame['function'] . '()';
+                }
+            }
+            if (count($aLignes) > 0) {
+                $sFullMessage .= "\nTrace :\n" . implode("\n", $aLignes);
+            }
+        }
+
+        self::postToDiscord($sFullMessage);
+    }
+
+    private static function postToDiscord($sMessage) {
+
+        if (!defined('DISCORD_HOOK') || strlen(DISCORD_HOOK) === 0) {
+            echo "DISCORD_HOOK non configuré dans config.php, message non envoyé :\n" . $sMessage . "\n";
+            return;
+        }
+
+        $ch = curl_init(DISCORD_HOOK);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_POST, 1);
+
+        // Discord limite le champ "content" à 2000 caractères : au-delà, on envoie
+        // le log complet en pièce jointe pour ne rien tronquer.
+        if (strlen($sMessage) > 1900) {
+            $sTmpFile = tempnam(sys_get_temp_dir(), 'discord_log_') . '.txt';
+            file_put_contents($sTmpFile, $sMessage);
+
+            curl_setopt($ch, CURLOPT_POSTFIELDS, array(
+                'payload_json' => json_encode(array('content' => '📎 Log complet en pièce jointe (message trop long pour Discord) :')),
+                'file1' => new CURLFile($sTmpFile, 'text/plain', 'log.txt'),
+            ));
+            curl_exec($ch);
+            unlink($sTmpFile);
+        } else {
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(array('content' => $sMessage)));
+            curl_exec($ch);
+        }
+
+        if (curl_errno($ch)) {
+            echo "Erreur envoi Discord : " . curl_error($ch) . "\n";
+        }
     }
 
 }
