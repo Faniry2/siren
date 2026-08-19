@@ -60,7 +60,8 @@ define('FILE_RESULT_POUR_PJ',"C:\\Users\\sleco\\Documents\\GEOSIRENE\\sirene_pou
 define('FILE_RESULT_POUR_BANO',"E:\\maj_geosirene\\sirene_pour_bano.csv");
 define('FILE_SORTIE_BANO',"E:\\maj_geosirene\\sirene_resultat_bano.csv");
 define('FILE_LOG_MAJ',"E:\\maj_geosirene\\log_maj_geosirene.csv");
-define('ADR_FTP',"192.168.1.120"); 
+define('ADR_FTP',"192.168.1.120");
+define('DISCORD_HOOK', "https://discord.com/api/webhooks/1539651583686480035/cQEafyhqfQeiJGiHNCb8yweliLYIfGKstjypDNLKhk2_8wNeYWc56nz8tR60JjgF32cC"); // URL du webhook Discord (à renseigner)
 
 
 //DEV

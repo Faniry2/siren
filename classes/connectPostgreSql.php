@@ -3408,38 +3408,32 @@ class connectPostreSql {
 
     public function sendMailIncident() {
 
-        $sQuery = "select public.bdf_envoi_mail_erreur_maj();";
-        $this->queryPDO($sQuery);
+        Util::sendDiscordMessage("🚨 Erreur lors de la mise à jour Geosirene.", true);
     }
 
     public function sendMailIncidentUL() {
 
-        $sQuery = "select public.bdf_envoi_mail_erreur_maj_ul();";
-        $this->queryPDO($sQuery);
+        Util::sendDiscordMessage("🚨 Erreur lors de la mise à jour des unités légales.", true);
     }
 
     public function sendMailIncidentBano() {
 
-        $sQuery = "select public.bdf_envoi_mail_erreur_bano();";
-        $this->queryPDO($sQuery);
+        Util::sendDiscordMessage("🚨 Erreur : l'API Bano ne répond pas.", true);
     }
 
     public function sendMailMajUl() {
 
-        $sQuery = "select public.bdf_envoi_mail_recap_maj_fin_ul();";
-        $this->queryPDO($sQuery);
+        Util::sendDiscordMessage("✅ Fin de la mise à jour des unités légales.");
     }
 
     public function sendMailPagesJaunes() {
 
-        $sQuery = "select public.bdf_envoi_mail_maj_pj();";
-        $this->queryPDO($sQuery);
+        Util::sendDiscordMessage("✅ Fin de la mise à jour Pages Jaunes.");
     }
 
     public function sendMailRecapMajgeosirene($inbCreation, $inbUdpate) {
-        //Util::logMajGeosirene("Envoi mail récap  créations = " . $inbCreation . " Update = " . $inbUdpate);
-        $sQuery = "SELECT public.bdf_envoi_mail_recap_maj(" . $inbCreation . ", " . $inbUdpate . ");";
-        $this->queryPDO($sQuery);
+
+        Util::sendDiscordMessage("✅ Récap mise à jour Geosirene : " . $inbCreation . " création(s), " . $inbUdpate . " mise(s) à jour.");
     }
 
     public function getStockToGeocode($iOfsset) {
@@ -3844,19 +3838,7 @@ class connectPostreSql {
 
     public function sendMailMajNomEtablissement() {
 
-        $sQuery = "SELECT * FROM public.bdf_envoi_mail_recap_maj_denomination()";
-
-        $db = $this->getConnexionMysql();
-        $sql = $db->prepare($sQuery);
-        $sql->execute();
-
-        $aErreur = $sql->errorInfo();
-
-        $error= $aErreur[2] ?? '';
-        
-        if (strlen($error) > 0) {
-            die($aErreur[2]);
-        }
+        Util::sendDiscordMessage("✅ Fin de la mise à jour des dénominations/enseignes.");
     }
 
     public function deleteEtabFermeInStock($siret) {
@@ -4687,10 +4669,7 @@ class connectPostreSql {
 
     public function envoiMailFinTraitement() {
 
-        // $sQuery = "SELECT public.bdf_envoi_mail_recap_maj_fin_insee()";
-        // $db = $this->getConnexion();
-        // $sql = $db->prepare($sQuery);
-        // $sql->execute();
+        Util::sendDiscordMessage("✅ Fin du traitement INSEE.");
     }
     
     
@@ -5436,16 +5415,13 @@ class connectPostreSql {
 
     public function sendMailFinDenoGeoscar() {
 
-        $sQuery = "select public.bdf_envoi_mail_fin_maj_deno();";
-        $this->queryPDO($sQuery);
+        Util::sendDiscordMessage("✅ Fin de la mise à jour Geoscar (dénomination).");
     }
 
     public function sendMailIncidentQuery($requete, $message) {
 
-        $sQuery = "SELECT public.bdf_alerte_envoi_mail_error_query('" . $requete . "','" . $message . "')";
-        $db = $this->getConnexion();
-        $sql = $db->prepare($sQuery);
-        $sql->execute();
+        $sMessage = "🚨 Erreur SQL :\nRequête : " . $requete . "\nMessage : " . $message;
+        Util::sendDiscordMessage($sMessage, true);
     }
 
     public function updateDateIntNumFic($date, $numfic) {
